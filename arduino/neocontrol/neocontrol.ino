@@ -8,12 +8,17 @@
 #define numPix 7                       // Number of NeoPixels in the Ring or Strip
 
 enum States{
+  SLEEP,
+  WAKEUP,
+  NORMAL,
   FEEL_POSITIVE,
-  FEEL_NEGATIVE, 
-  BLINK 
+  FEEL_NEGATIVE,
+  FEEL_EXCITED 
 };
 
-States state= BLINK;
+States eye_state = SLEEP;
+States heart_state = NORMAL;
+
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -80,21 +85,30 @@ void loop() {
       toggleComplete = false;
         
     }
+
+
+  if(eye_state == WAKEUP){
+
+    // TODO
+    wakeup();
     
-    if(state == FEEL_POSITIVE){
+    //letsDoIt(30, 50, 255,255,0);     
+    eye_state == NORMAL;
+
+  }else if(eye_state == FEEL_POSITIVE){
  
-      colorWipe(strip.Color(0, 255, 0), 50); // Green
+    colorWipe(strip.Color(0, 255, 0), 50); // Green
       
-      //strip.setBrightness(bright_level);    
+    //strip.setBrightness(bright_level);    
       
-    }else if (state == FEEL_NEGATIVE){
+  }else if (eye_state == FEEL_NEGATIVE){
     
-      colorWipe(strip.Color(0, 0, 255), 50); // Green
-      //strip.setBrightness(bright_level);
+    colorWipe(strip.Color(0, 0, 255), 50); // Green
+    //strip.setBrightness(bright_level);
       
-    }else{
-      letsDoIt(30, 50, 255,255,0);     
-    }
+  }else{
+    letsDoIt(30, 50, 255,255,0);     
+  }
    
   delay(100);
 
@@ -124,10 +138,25 @@ void parseInput()
   inputString.toCharArray(charHolder,inputString.length()+1);
   
   if(inputString.startsWith("FP")){
-    state = FEEL_POSITIVE;
+
+    eye_state = FEEL_POSITIVE;
+
   }else if (inputString.startsWith("FN")){
-    state = FEEL_NEGATIVE; 
+
+    eye_state = FEEL_NEGATIVE; 
+
+  }else if (inputString.startsWith("WK")){
+
+    // wake up
+    eye_state = WAKEUP;
+    
+  }else if (inputString.startsWith("XX")){
+
+    // getting exciting
+
+    
   }
+  
   
   
   inputString = "";
