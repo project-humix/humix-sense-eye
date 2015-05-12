@@ -55,6 +55,7 @@ nats.subscribe('humix.sense.eye.command', function(input){
         
     }else if( msg.feel && msg.feel >= -100 && msg.feel <= 100 ){
 
+        log.info("Getting feel command");
         var level = parseInt(msg.feel);
         var prefix,command;
         if(level >= 0)
@@ -69,7 +70,6 @@ nats.subscribe('humix.sense.eye.command', function(input){
         sp.write(command+'E');
 	} 
     
-
 });
 
 
