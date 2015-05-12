@@ -12,7 +12,8 @@ var sp = new SerialPort(portName, {
    flowControl: false
 });
 
-console.log('here');
+
+
 
 sp.open(function(error){
 
@@ -20,20 +21,12 @@ sp.open(function(error){
   if ( error ) {
     console.log('failed to open: '+error);
   } else {
-    console.log('open');
-   sp.write('0\n');
+      log.info('Eye control is ready');
+      sp.write('0\n');
+      // sleep by default
+      sp.write('SLE');
+
   }});
-
-
-//sp.write('1E');
-/*
-sp.on("open", function(){
-
-   log.debug('serial opened');
-   
-   sp.write('1E');
-});
-*/
 
 
 
@@ -43,10 +36,16 @@ nats.subscribe('humix.sense.eye.command', function(input){
 
     var msg = JSON.parse(input);
 
-    if( msg.action && msg.action === 'wakeup'){
+    if( msg.action ){
 
-        log.info("Waking Up");
-        sp.write('WKE');
+        if(msg.action === 'wakeup'){
+            log.info("Waking Up");
+            sp.write('WKE');
+        }else if(msg.action === 'sleep'){
+
+            log.info("Sleeping");
+            sp.write('SLE');
+        }
         
     }else if (msg.feel && msg.feel === 'excited'){
 

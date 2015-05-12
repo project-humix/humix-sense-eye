@@ -13,6 +13,7 @@
 
 enum States{
   SLEEP,
+  SLEEPING,
   WAKEUP,
   NORMAL,
   FEEL_POSITIVE,
@@ -20,7 +21,7 @@ enum States{
   FEEL_EXCITED 
 };
 
-States eye_state = SLEEP;
+States eye_state = SLEEPING;
 States heart_state = NORMAL;
 
 
@@ -95,14 +96,15 @@ void loop() {
 
   if(eye_state == NORMAL){
 
-    
-    heartRainbowCycle(20);
 
+    if(heart_state == NORMAL){ 
+      heartRainbowCycle(20);
+    }
     if(heart_state == FEEL_EXCITED){
 
       heartExcited();
 
-      heart_state == NORMAL;
+      heart_state = NORMAL;
     }
 
     
@@ -111,36 +113,42 @@ void loop() {
     wakeup();
     
     eye_state = NORMAL;
+    heart_state = NORAMAL;
 
   }else if(eye_state == FEEL_POSITIVE){
 
-
+   
     for (int i=0; i<numEyePix; i++) {
       right_eye_strip.setPixelColor(i,0,255,0);
       left_eye_strip.setPixelColor(i,0,255,0);
       right_eye_strip.setBrightness(bright_level);
-      left_eye_strip.setBrightness(bright_level);
-      right_eye_strip.show();
-      left_eye_strip.show();
+      left_eye_strip.setBrightness(bright_level);     
       
     }
-
+    right_eye_strip.show();
+    left_eye_strip.show();
     eye_state = NORMAL;
       
   }else if (eye_state == FEEL_NEGATIVE){
 
+    
     for (int i=0; i<numEyePix; i++) {
       right_eye_strip.setPixelColor(i,0,0,255);
       left_eye_strip.setPixelColor(i,0,0,255);
       right_eye_strip.setBrightness(bright_level);
       left_eye_strip.setBrightness(bright_level);
-      right_eye_strip.show();
-      left_eye_strip.show();
-      
+          
     }
 
-    eye_state = NORMAL;
+     right_eye_strip.show();
+     left_eye_strip.show();
+     eye_state = NORMAL;
       
+  }else if (eye_state == SLEEP){
+    
+    sleep();
+    eye_state = SLEEPING;
+    heart_state = SLEEPING;
   }
   
    
@@ -168,7 +176,7 @@ void loop() {
 void heartExcited(){
 
 
-  if (int j=0;j<100;j++){
+  for(int j=0;j<20;j++){
     
     for (int i=0; i<numHeartPix; i++) {
       heart_strip.setPixelColor(i,255,0,0);
@@ -191,7 +199,7 @@ void heartExcited(){
 void heartRainbowCycle(uint8_t wait) {
   uint16_t i, j;
 
-  for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
+  for(j=0; j<256; j++) { // 5 cycles of all colors on wheel
     for(i=0; i< heart_strip.numPixels(); i++) {
       heart_strip.setPixelColor(i, Wheel(((i * 256 / heart_strip.numPixels()) + j) & 255));
     }
@@ -233,7 +241,7 @@ void heartChaseRainbow(uint8_t wait) {
 
 void sleep() {
 
-    int pause = 80;
+  int pause = 80;
   int steps = 50;
 
   int tmpR, tmpG, tmpB;         // Temp values
@@ -253,7 +261,13 @@ void sleep() {
     delay(pause);
   }          
 
-  
+  for (int i=0; i<numHeartPix; i++) {
+      heart_strip.setPixelColor(i,0,0,0);
+  }
+
+  heart_strip.show();
+  heart_state =  
+    
 }
 
 void wakeup(){
@@ -289,10 +303,13 @@ void parseInput()
 
     eye_state = FEEL_POSITIVE;
 
+    bright_level = atoi(charHolder+2);
+ 
   }else if (inputString.startsWith("FN")){
 
     eye_state = FEEL_NEGATIVE; 
-
+    bright_level = atoi(charHolder+2);
+ 
   }else if (inputString.startsWith("WK")){
 
     // wake up
@@ -300,14 +317,15 @@ void parseInput()
     
   }else if (inputString.startsWith("XX")){
 
-    // getting exciting
-
+    heart_state = FEEL_EXCITED;
     
+  }else if (inputString.startsWith("SL)){
+    eye_state = SLEEP;
   }
     
   inputString = "";
   
-  bright_level = atoi(charHolder+2);
+ 
   
 }
 
