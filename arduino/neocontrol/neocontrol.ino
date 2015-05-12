@@ -83,8 +83,6 @@ void loop() {
   }
 
 
- 
-
   // Toggle LED 13
   if(!Serial.available() && toggleComplete == true)
     {
@@ -99,6 +97,14 @@ void loop() {
 
     
     heartRainbowCycle(20);
+
+    if(heart_state == FEEL_EXCITED){
+
+      heartExcited();
+
+      heart_state == NORMAL;
+    }
+
     
   }else if(eye_state == WAKEUP){
 
@@ -107,15 +113,33 @@ void loop() {
     eye_state = NORMAL;
 
   }else if(eye_state == FEEL_POSITIVE){
- 
-    //colorWipe(strip.Color(0, 255, 0), 50); // Green
+
+
+    for (int i=0; i<numEyePix; i++) {
+      right_eye_strip.setPixelColor(i,0,255,0);
+      left_eye_strip.setPixelColor(i,0,255,0);
+      right_eye_strip.setBrightness(bright_level);
+      left_eye_strip.setBrightness(bright_level);
+      right_eye_strip.show();
+      left_eye_strip.show();
       
-    //strip.setBrightness(bright_level);    
+    }
+
+    eye_state = NORMAL;
       
   }else if (eye_state == FEEL_NEGATIVE){
-    
-    //colorWipe(strip.Color(0, 0, 255), 50); // Green
-    //strip.setBrightness(bright_level);
+
+    for (int i=0; i<numEyePix; i++) {
+      right_eye_strip.setPixelColor(i,0,0,255);
+      left_eye_strip.setPixelColor(i,0,0,255);
+      right_eye_strip.setBrightness(bright_level);
+      left_eye_strip.setBrightness(bright_level);
+      right_eye_strip.show();
+      left_eye_strip.show();
+      
+    }
+
+    eye_state = NORMAL;
       
   }
   
@@ -139,6 +163,29 @@ void loop() {
   //theaterChaseRainbow(50);
   //letsDoIt(30, 50, 255,255,0); 
 
+}
+
+void heartExcited(){
+
+
+  if (int j=0;j<100;j++){
+    
+    for (int i=0; i<numHeartPix; i++) {
+      heart_strip.setPixelColor(i,255,0,0);
+    }
+
+    heart_strip.show();
+
+    delay(200);
+
+    for (int i=0; i<numHeartPix; i++) {
+      heart_strip.setPixelColor(i,0);
+    }
+
+    heart_strip.show();
+    delay(200);
+  }
+  
 }
 
 void heartRainbowCycle(uint8_t wait) {
