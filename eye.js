@@ -29,6 +29,12 @@ sp.open(function(error){
   }});
 
 
+// health check
+nats.subscribe('humix.sense.eye.status.ping', function(request,replyto){
+
+    nats.publish(replyto,'humix.sense.eye.status.pong');
+})
+
 
 nats.subscribe('humix.sense.eye.command', function(input){
 
@@ -67,7 +73,13 @@ nats.subscribe('humix.sense.eye.command', function(input){
         command = prefix + Math.floor((Math.abs(level)/100)*255);
         console.log('command:'+command)
         sp.write(command+'E');
-	} 
+	}else if( msg.heartrate ){
+
+        log.info("received heart rate");
+        var command = "HR"+msg.heartrate;
+        log.info("command :"+command);
+        sp.write(command+'E');
+    } 
     
 });
 

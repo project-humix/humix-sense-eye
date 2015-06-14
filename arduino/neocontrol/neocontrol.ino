@@ -18,7 +18,8 @@ enum States{
   NORMAL,
   FEEL_POSITIVE,
   FEEL_NEGATIVE,
-  FEEL_EXCITED 
+  FEEL_EXCITED,
+  HRM_MODE
 };
 
 States eye_state = SLEEPING;
@@ -47,7 +48,7 @@ String inputString = "";         // a string to hold incoming data
 boolean toggleComplete = false;
 
 int bright_level;
-
+int hrm_level=60;
 
 void setup() {
   // This is for Trinket 5V 16MHz, you can remove these three lines if you are not using a Trinket
@@ -84,7 +85,6 @@ void loop() {
   }
 
 
-  // Toggle LED 13
   if(!Serial.available() && toggleComplete == true)
     {
       // convert String to int.
@@ -99,12 +99,16 @@ void loop() {
 
     if(heart_state == NORMAL){ 
       heartRainbowCycle(20);
-    }
-    if(heart_state == FEEL_EXCITED){
+    }else if(heart_state == FEEL_EXCITED){
 
       heartExcited();
 
       heart_state = NORMAL;
+      
+    }else if(heart_state == HRM_MODE){
+
+      heartBeat(hrm_level);
+      heart_state = NORMAL;        
     }
 
     
@@ -113,7 +117,7 @@ void loop() {
     wakeup();
     
     eye_state = NORMAL;
-    heart_state = NORAMAL;
+    heart_state = NORMAL;
 
   }else if(eye_state == FEEL_POSITIVE){
 
@@ -152,25 +156,37 @@ void loop() {
   }
   
    
-  delay(100);
+  delay(50);
 
-// different control effects
- /*
-  grow_color(30, 50, 255,255,0);     
-  colorWipe(strip.Color(255, 0, 0), 50); // Red
-  colorWipe(strip.Color(0, 255, 0), 50); // Green
-  colorWipe(strip.Color(0, 0, 255), 50); // Blue
-  // Send a theater pixel chase in...
-  theaterChase(strip.Color(127, 127, 127), 50); // White
-*/
-  //theaterChase(strip.Color(127,   0,   0), 50); // Red
-  //theaterChase(strip.Color(  0,   0, 127), 50); // Blue
+}
 
-  //rainbow(20);
-  //rainbowCycle(20);
-  //theaterChaseRainbow(50);
-  //letsDoIt(30, 50, 255,255,0); 
 
+void heartBeat (int rate){
+
+  int beat_delay = (int) (60000 / rate);
+
+  int count = 20;
+
+  while(count--){
+
+    for (volatile int i=0; i<heart_strip.numPixels(); i++){
+      heart_strip.setPixelColor(i, heart_strip.Color(255, 0, 0));
+            
+    }
+    heart_strip.show();
+    delay(150);
+
+
+    for (volatile int i=0; i<heart_strip.numPixels(); i++){
+      heart_strip.setPixelColor(i, heart_strip.Color(20, 0, 0));
+            
+    }
+    heart_strip.show();
+    delay(beat_delay);
+
+        
+  }
+  
 }
 
 void heartExcited(){
@@ -259,14 +275,14 @@ void sleep() {
     right_eye_strip.show();
     left_eye_strip.show();
     delay(pause);
-  }          
+  }   
 
   for (int i=0; i<numHeartPix; i++) {
       heart_strip.setPixelColor(i,0,0,0);
   }
 
   heart_strip.show();
-  heart_state =  
+  heart_state = SLEEPING;
     
 }
 
@@ -319,8 +335,13 @@ void parseInput()
 
     heart_state = FEEL_EXCITED;
     
-  }else if (inputString.startsWith("SL)){
+  }else if (inputString.startsWith("SL")){
     eye_state = SLEEP;
+
+  }else if (inputString.startsWith("HR")){
+
+    heart_state = HRM_MODE;
+    hrm_level = atoi(charHolder+2);
   }
     
   inputString = "";
