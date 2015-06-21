@@ -8,7 +8,7 @@
 #define pinPix 6                       // Pin driving NeoPixel Ring or String
 #define numPix 7                       // Number of NeoPixels in the Ring or Strip
 #define numEyePix 7
-#define numHeartPix 24
+#define numHeartPix 16
 
 
 enum States{
@@ -24,6 +24,7 @@ enum States{
 
 States eye_state = SLEEPING;
 States heart_state = NORMAL;
+
 
 
 // Parameter 1 = number of pixels in strip
@@ -49,6 +50,7 @@ boolean toggleComplete = false;
 
 int bright_level;
 int hrm_level=60;
+int heartColorIndex=0;
 
 void setup() {
   // This is for Trinket 5V 16MHz, you can remove these three lines if you are not using a Trinket
@@ -72,7 +74,7 @@ void setup() {
 void loop() {
 
 
-
+  // Check for new command 
   while (Serial.available() && toggleComplete == false ) {
     char inChar = (char)Serial.read();
     if(inChar == 'E'){ // end character for toggle LED
@@ -81,24 +83,26 @@ void loop() {
     else{
       inputString += inChar;
     }
-
   }
-
 
   if(!Serial.available() && toggleComplete == true)
     {
       // convert String to int.
       parseInput();
-
       toggleComplete = false;
         
     }
 
+
+  // Local State Transition
+  
   if(eye_state == NORMAL){
 
 
     if(heart_state == NORMAL){ 
-      heartRainbowCycle(20);
+      heartRainbowCycle();
+     // heartChaseRainbow();
+     // grow_color(50,20, 255,255,0);
     }else if(heart_state == FEEL_EXCITED){
 
       heartExcited();
@@ -160,6 +164,83 @@ void loop() {
 
 }
 
+void parseInput()
+{
+  char charHolder[inputString.length()+1];
+  
+  inputString.toCharArray(charHolder,inputString.length()+1);
+  
+  if(inputString.startsWith("FP")){
+
+    eye_state = FEEL_POSITIVE;
+
+    bright_level = atoi(charHolder+2);
+ 
+  }else if (inputString.startsWith("FN")){
+
+    eye_state = FEEL_NEGATIVE; 
+    bright_level = atoi(charHolder+2);
+ 
+  }else if (inputString.startsWith("WK")){
+
+    // wake up
+    eye_state = WAKEUP;
+    
+  }else if (inputString.startsWith("XX")){
+
+    heart_state = FEEL_EXCITED;
+    
+  }else if (inputString.startsWith("SL")){
+    eye_state = SLEEP;
+
+  }else if (inputString.startsWith("HR")){
+
+    heart_state = HRM_MODE;
+    hrm_level = atoi(charHolder+2);
+  }
+    
+  inputString = "";
+  
+}
+
+void grow_color(int pause, int steps, byte R, byte G, byte B) { 
+
+  int tmpR, tmpG, tmpB;         // Temp values
+  
+  // Fade up
+  for (int s=1; s<=steps; s++) {
+    tmpR = (R * s) / steps;     // Multiply first to avoid truncation errors  
+    tmpG = (G * s) / steps;
+    tmpB = (B * s) / steps;
+    
+    for (int i=0; i<numEyePix; i++) {
+      right_eye_strip.setPixelColor(i,tmpR,tmpG,tmpB);
+      left_eye_strip.setPixelColor(i,tmpR,tmpG,tmpB);
+    }
+    right_eye_strip.show();
+    left_eye_strip.show();
+    delay(pause);
+  }    
+
+  // Fade down
+  for (int s=steps; s>0; s--) {
+    tmpR = (R * s) / steps;     // Multiply first to avoid truncation errors  
+    tmpG = (G * s) / steps;
+    tmpB = (B * s) / steps;
+    
+    for (int i=0; i<numEyePix; i++) {
+      right_eye_strip.setPixelColor(i,tmpR,tmpG,tmpB);
+      left_eye_strip.setPixelColor(i,tmpR,tmpG,tmpB);
+    }
+    
+    right_eye_strip.show();
+    left_eye_strip.show();
+    delay(pause);
+  }    
+
+  delay(pause * 10);
+}
+
 
 void heartBeat (int rate){
 
@@ -212,48 +293,57 @@ void heartExcited(){
   
 }
 
-void heartRainbowCycle(uint8_t wait) {
+void heartRainbowCycle() {
+
   uint16_t i, j;
-
-  for(j=0; j<256; j++) { // 5 cycles of all colors on wheel
-    for(i=0; i< heart_strip.numPixels(); i++) {
-      heart_strip.setPixelColor(i, Wheel(((i * 256 / heart_strip.numPixels()) + j) & 255));
-    }
-    heart_strip.show();
-    delay(wait);
+  //uint8_t wait = 1;
+  heartColorIndex++;
+  
+  if( heartColorIndex > 256 ){
+     heartColorIndex = 0;
   }
-}
+  
+  j = heartColorIndex;
 
-uint32_t Wheel(byte WheelPos) {
-  WheelPos = 255 - WheelPos;
-  if(WheelPos < 85) {
-   return heart_strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
-  } else if(WheelPos < 170) {
-    WheelPos -= 85;
-   return heart_strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
-  } else {
-   WheelPos -= 170;
-   return heart_strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  for(i=0; i< heart_strip.numPixels(); i++) {
+    heart_strip.setPixelColor(i, Wheel(((i * 256 / heart_strip.numPixels()) + j) & 255));
   }
+  
+  heart_strip.show();
+  //delay(wait);
+  
 }
 
 
-void heartChaseRainbow(uint8_t wait) {
-  for (int j=0; j < 256; j++) {     // cycle all 256 colors in the wheel
-    for (int q=0; q < 3; q++) {
-        for (int i=0; i < heart_strip.numPixels(); i=i+3) {
-          heart_strip.setPixelColor(i+q, Wheel( (i+j) % 255));    //turn every third pixel on
-        }
-        heart_strip.show();
-       
-        delay(wait);
-       
-        for (int i=0; i < heart_strip.numPixels(); i=i+3) {
+
+void heartChaseRainbow() {
+  
+  uint8_t wait = 50;
+   
+  heartColorIndex++;
+  if( heartColorIndex > 256 ){
+     heartColorIndex = 0;
+  }
+  
+  int j = heartColorIndex;
+  
+  for (int q=0; q < 3; q++) {
+      for (int i=0; i < heart_strip.numPixels(); i=i+3) {
+        heart_strip.setPixelColor(i+q, Wheel( (i+j) % 255));    //turn every third pixel on
+      }
+      heart_strip.show();
+         
+      delay(wait);
+         
+      for (int i=0; i < heart_strip.numPixels(); i=i+3) {
           heart_strip.setPixelColor(i+q, 0);        //turn every third pixel off
-        }
-    }
+      }
   }
+ 
 }
+
+
+
 
 void sleep() {
 
@@ -309,46 +399,8 @@ void wakeup(){
   }          
 }
 
-void parseInput()
-{
-  char charHolder[inputString.length()+1];
-  
-  inputString.toCharArray(charHolder,inputString.length()+1);
-  
-  if(inputString.startsWith("FP")){
 
-    eye_state = FEEL_POSITIVE;
-
-    bright_level = atoi(charHolder+2);
- 
-  }else if (inputString.startsWith("FN")){
-
-    eye_state = FEEL_NEGATIVE; 
-    bright_level = atoi(charHolder+2);
- 
-  }else if (inputString.startsWith("WK")){
-
-    // wake up
-    eye_state = WAKEUP;
-    
-  }else if (inputString.startsWith("XX")){
-
-    heart_state = FEEL_EXCITED;
-    
-  }else if (inputString.startsWith("SL")){
-    eye_state = SLEEP;
-
-  }else if (inputString.startsWith("HR")){
-
-    heart_state = HRM_MODE;
-    hrm_level = atoi(charHolder+2);
-  }
-    
-  inputString = "";
-  
- 
-  
-}
+// Helper Functions
 
 void setFixColor(uint32_t c, uint8_t wait) {
 
@@ -360,6 +412,19 @@ void setFixColor(uint32_t c, uint8_t wait) {
       right_eye_strip.show();
       left_eye_strip.show();
       delay(wait);
+  }
+}
+
+uint32_t Wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if(WheelPos < 85) {
+   return heart_strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else if(WheelPos < 170) {
+    WheelPos -= 85;
+   return heart_strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  } else {
+   WheelPos -= 170;
+   return heart_strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
   }
 }
 
@@ -402,23 +467,7 @@ void rainbowCycle(uint8_t wait) {
   }
 }
 
-//Theatre-style crawling lights.
-void theaterChase(uint32_t c, uint8_t wait) {
-  for (int j=0; j<10; j++) {  //do 10 cycles of chasing
-    for (int q=0; q < 3; q++) {
-      for (int i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, c);    //turn every third pixel on
-      }
-      strip.show();
-     
-      delay(wait);
-     
-      for (int i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, 0);        //turn every third pixel off
-      }
-    }
-  }
-}
+
 
 //Theatre-style crawling lights with rainbow effect
 
@@ -434,41 +483,4 @@ void theaterChase(uint32_t c, uint8_t wait) {
 // Pause = delay between transitions
 // Steps = number of steps
 // R, G, B = Full-on RGB values
-void grow_color(int pause, int steps, byte R, byte G, byte B) { 
-
-  int tmpR, tmpG, tmpB;         // Temp values
-  
-  // Fade up
-  for (int s=1; s<=steps; s++) {
-    tmpR = (R * s) / steps;     // Multiply first to avoid truncation errors  
-    tmpG = (G * s) / steps;
-    tmpB = (B * s) / steps;
-    
-    for (int i=0; i<numEyePix; i++) {
-      right_eye_strip.setPixelColor(i,tmpR,tmpG,tmpB);
-      left_eye_strip.setPixelColor(i,tmpR,tmpG,tmpB);
-    }
-    right_eye_strip.show();
-    left_eye_strip.show();
-    delay(pause);
-  }    
-
-  // Fade down
-  for (int s=steps; s>0; s--) {
-    tmpR = (R * s) / steps;     // Multiply first to avoid truncation errors  
-    tmpG = (G * s) / steps;
-    tmpB = (B * s) / steps;
-    
-    for (int i=0; i<numEyePix; i++) {
-      right_eye_strip.setPixelColor(i,tmpR,tmpG,tmpB);
-      left_eye_strip.setPixelColor(i,tmpR,tmpG,tmpB);
-    }
-    
-    right_eye_strip.show();
-    left_eye_strip.show();
-    delay(pause);
-  }    
-
-  delay(pause * 10);
-}
 
